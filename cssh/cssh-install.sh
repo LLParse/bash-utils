@@ -29,11 +29,16 @@ PATH_CMD=/usr/bin/cssh
 TMP=/tmp
 
 install() {
+  HOSTS=("$@")
   if [ -f $SCRIPT ]; then
-    for host in "$@"; do
-      echo "Installing $SCRIPT to $PATH_CMD on $host..."
-      scp ${SCP_OPTS} $SCRIPT $host:$TMP && \
-        ssh ${SSH_OPTS} $host "sudo mv -f $TMP/$SCRIPT $PATH_CMD"
+    for ((i=0; i<${#HOSTS[@]}; i++)); do
+      echo "Installing $SCRIPT to $PATH_CMD on ${HOSTS[i]}..."
+      scp ${SCP_OPTS} $SCRIPT ${HOSTS[i]}:$TMP && \
+        ssh ${SSH_OPTS} ${HOSTS[i]} "sudo mv -f $TMP/$SCRIPT $PATH_CMD" &
+        pid[i]=$!
+    done
+    for ((i=0; i<${#HOSTS[@]}; i++)); do
+      wait ${pid[i]}
     done
   else
     echo "Could not find script to be installed: $SCRIPT"
