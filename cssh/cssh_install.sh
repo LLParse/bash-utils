@@ -26,13 +26,14 @@ SSH_OPTS="-o StrictHostKeyChecking=no -q"
 SCP_OPTS="-q"
 SCRIPT=cssh.sh
 PATH_CMD=/usr/bin/cssh
+TMP=/tmp
 
 install() {
   if [ -f $SCRIPT ]; then
     for host in "$@"; do
       echo "Installing $SCRIPT to $PATH_CMD on $host..."
       scp ${SCP_OPTS} $SCRIPT $host:$TMP && \
-        ssh ${SSH_OPTS} $host "sudo mv -f /tmp/$SCRIPT $PATH_CMD"
+        ssh ${SSH_OPTS} $host "sudo mv -f $TMP/$SCRIPT $PATH_CMD"
     done
   else
     echo "Could not find script to be installed: $SCRIPT"
