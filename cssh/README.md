@@ -24,7 +24,7 @@ OPTIONS:
 REPO_DIR=/tmp/bash-utils
 
 git clone https://github.com/Xerxes500/bash-utils.git $REPO_DIR
-sudo ln -s $REPO_DIR/cssh/cssh.sh /usr/bin/cssh
+sudo cp -f $REPO_DIR/cssh/cssh.sh /usr/bin/cssh
 rm -rf $REPO_DIR
 ```
 ##Unix Cluster
