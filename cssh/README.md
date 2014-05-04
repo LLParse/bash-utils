@@ -7,14 +7,22 @@ asynchronous execution, which will dramatically reduce execution time in almost 
 
 #Usage
 ```
-usage: cssh [-a] (-c <cmd>|-s <script>) (hosts)+
+usage: ./cssh.sh [-a [-n]] [-o <options>] (-s <script>) (-c <cmd>) (hosts)+
+       ./cssh.sh -h
 
 Easy execution of commands and scripts across a set of hosts using SSH.
+
+Both a script and command may be specified at once. Scripts execute before 
+commands. In asynchronous mode, the command will only execute once the script 
+returns 0 and will not execute otherwise.
 
 OPTIONS:
    -a      Asynchronous execution
    -c      Execute command on hosts
-   -h      Display usage
+   -h      Help: Display usage
+   -n      Non-blocking (return immediately)
+   -o      SSH Options. Default: 
+                 "-oStrictHostKeyChecking=no -oConnectTimeout=5"
    -s      Execute script on hosts
 ```
 
