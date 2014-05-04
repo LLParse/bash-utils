@@ -24,7 +24,7 @@ error() {
 
 usage() {
 cat << EOF
-usage: $0 [-a [-n]] (-s <script>) (-c <cmd>) (hosts)+
+usage: $0 [-a [-n]] [-o <options>] (-s <script>) (-c <cmd>) (hosts)+
        $0 -h
 
 Easy execution of commands and scripts across a set of hosts using SSH.
@@ -38,6 +38,8 @@ OPTIONS:
    -c      Execute command on hosts
    -h      Help: Display usage
    -n      Non-blocking (return immediately)
+   -o      SSH Options. Default: 
+                 "$SSH_OPTS"
    -s      Execute script on hosts
 EOF
 exit 1
@@ -48,16 +50,17 @@ parse_args() {
   WAIT=true
   CMD=
   SCRIPT=
-  SSH_OPTS="-oStrictHostKeyChecking=no"
+  SSH_OPTS="-oStrictHostKeyChecking=no -oConnectTimeout=5"
   if [ $# -eq 0 ]; then
     usage
   fi
-  while getopts "ac:hns:" OPTION; do
+  while getopts "ac:hno:s:" OPTION; do
     case $OPTION in
       a) ASYNC=true;;
       c) CMD=$OPTARG;;
       h) usage;;
       n) WAIT=false;;
+      o) SSH_OPTS=$OPTARG && echo "Using SSH Opts: $OPTARG";;
       s) SCRIPT=$OPTARG;;
       ?) echo "Invalid option: -$OPTARG" && usage;;
     esac
