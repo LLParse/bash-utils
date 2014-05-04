@@ -24,15 +24,20 @@ error() {
 
 usage() {
 cat << EOF
-usage: $0 [-a] (-c <cmd>|-s <script>) (hosts)+
+usage: $0 [-a [-n]] (-s <script>) (-c <cmd>) (hosts)+
        $0 -h
 
 Easy execution of commands and scripts across a set of hosts using SSH.
 
+Both a script and command may be specified at once. Scripts execute before 
+commands. In asynchronous mode, the command will only execute once the script 
+returns 0 and will not execute otherwise.
+
 OPTIONS:
    -a      Asynchronous execution
    -c      Execute command on hosts
-   -h      Display usage
+   -h      Help: Display usage
+   -n      Non-blocking (return immediately)
    -s      Execute script on hosts
 EOF
 exit 1
@@ -40,17 +45,19 @@ exit 1
 
 parse_args() {
   ASYNC=false
+  WAIT=true
   CMD=
   SCRIPT=
   SSH_OPTS="-oStrictHostKeyChecking=no"
   if [ $# -eq 0 ]; then
     usage
   fi
-  while getopts "ac:hs:" OPTION; do
+  while getopts "ac:hns:" OPTION; do
     case $OPTION in
       a) ASYNC=true;;
       c) CMD=$OPTARG;;
       h) usage;;
+      n) WAIT=false;;
       s) SCRIPT=$OPTARG;;
       ?) echo "Invalid option: -$OPTARG" && usage;;
     esac
@@ -59,46 +66,43 @@ parse_args() {
   HOSTS=("$@")
 }
 
-wait_to_finish() {
-  if $ASYNC; then
-    for ((i=0; i<${#HOSTS[@]}; i++)); do
-      wait ${pid[i]}
-    done
-  fi
+ssh_cmd() {
+  ssh ${SSH_OPTS} $1 $2
 }
 
-exec_command() {
-  for ((i=0; i<${#HOSTS[@]}; i++)); do
-    if $ASYNC; then
-      ssh ${SSH_OPTS} ${HOSTS[i]} $CMD &
-      pid[i]=$!
-    else
-      ssh ${SSH_OPTS} ${HOSTS[i]} $CMD
-    fi
-  done
-  wait_to_finish
-}
-
-exec_script() {
-  for ((i=0; i<${#HOSTS[@]}; i++)); do
-    if $ASYNC; then
-      ssh ${SSH_OPTS} ${HOSTS[i]} 'bash -s' -- < $SCRIPT &
-      pid[i]=$!
-    else
-      ssh ${SSH_OPTS} ${HOSTS[i]} 'bash -s' -- < $SCRIPT
-    fi
-  done
-  wait_to_finish
+ssh_script() {
+  ssh ${SSH_OPTS} $1 'bash -s' -- < $2
 }
 
 cssh() {
-  if [ -n "$CMD" ]; then
-    exec_command
-  elif [ -n "$SCRIPT" ]; then
-    exec_script
-  else
-    echo "No command or script provided."
-    usage
+  for ((i=0; i<${#HOSTS[@]}; i++)); do
+    if $ASYNC; then
+      if [ -n "$CMD" -a -n "$SCRIPT" ]; then
+        ssh_cmd ${HOSTS[i]} $CMD && \
+        ssh_script  ${HOSTS[i]} $SCRIPT &
+      elif [ -n "$CMD" ]; then
+        ssh_cmd ${HOSTS[i]} $CMD &
+      elif [ -n "$SCRIPT" ]; then
+        ssh_script ${HOSTS[i]} $SCRIPT &
+      fi
+      # Save process id for blocking
+      if $WAIT; then
+        pid[i]=$!
+      fi
+    else
+      if [ -n "$CMD" ]; then
+        ssh_cmd ${HOSTS[i]} $CMD
+      fi
+      if [ -n "$SCRIPT" ]; then
+        ssh_script ${HOSTS[i]} $SCRIPT
+      fi
+    fi
+  done
+  # Block until all processes complete
+  if $WAIT && $ASYNC; then
+    for ((i=0; i<${#HOSTS[@]}; i++)); do
+      wait ${pid[i]}
+    done
   fi
 }
 
