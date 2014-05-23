@@ -7,8 +7,9 @@ asynchronous execution, which will dramatically reduce execution time in almost 
 
 #Usage
 ```
-usage: ./cssh.sh [-a [-n]] [-o <options>] (-s <script>) (-c <cmd>) (hosts)+
-       ./cssh.sh -h
+Usage: ./cssh [-a [-n]] [-o <options>] -s <script> hosts...
+       ./cssh [-a [-n]] [-o <options>] -c <command> hosts...
+       ./cssh -h
 
 Easy execution of commands and scripts across a set of hosts using SSH.
 
@@ -40,14 +41,14 @@ sudo cp -f $REPO_DIR/cssh/cssh.sh /usr/bin/cssh
 rm -rf $REPO_DIR
 ```
 ##Remote Machine / Cluster
-Change the HOSTS variable to match the hosts in your cluster.
+Change the CLUSTER variable to match the hosts in your cluster.
 ```bash
-HOSTS=$(echo host{1..3}.example.com host42.example.com)
+CLUSTER=$(echo host{1..3}.example.com host42.example.com)
 REPO_DIR=/tmp/bash-utils
 
 git clone https://github.com/Xerxes500/bash-utils.git $REPO_DIR
 pushd $REPO_DIR
-  cssh/cssh_install.sh ${HOSTS[@]}
+  cssh/install.sh $CLUSTER
 popd
 rm -rf $REPO_DIR
 ```
