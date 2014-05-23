@@ -24,7 +24,9 @@ error() {
 
 usage() {
 cat << EOF
-usage: $0 [-a [-n]] [-o <options>] (-s <script>) (-c <cmd>) (hosts)+
+CSSH v0.1
+Usage: $0 [-a [-n]] [-o <options>] -s <script> hosts...
+       $0 [-a [-n]] [-o <options>] -c <command> hosts...
        $0 -h
 
 Easy execution of commands and scripts across a set of hosts using SSH.
@@ -39,7 +41,7 @@ OPTIONS:
    -h      Help: Display usage
    -n      Non-blocking (return immediately)
    -o      SSH Options. Default: 
-                 "$SSH_OPTS"
+                 "-oStrictHostKeyChecking=no -oConnectTimeout=5"
    -s      Execute script on hosts
 EOF
 exit 1
