@@ -22,16 +22,29 @@ error() {
   exit 1
 }
 
-trust-key() {
+PUBKEY=~/.ssh/id_rsa.pub
+SSH_OPTS="-o StrictHostKeyChecking=no -q"
+
+key-test() {
+  if [ ! -f $PUBKEY ]; then
+    echo "Creating KeyPair on `hostname`.."
+    ssh-keygen
+  fi
+}
+
+no-pass() {
   for host in "$@"; do
     echo "Configuring password-less SSH on $host.."
-    scp ~/.ssh/id_rsa.pub $host:~
-    ssh $host 'cat ~/id_rsa.pub >> ~/.ssh/authorized_keys2 && rm ~/id_rsa.pub'
+    scp $PUBKEY $host:~
+    ssh ${SSH_OPTS} $host "`echo ~/.ssh/id_rsa.pub` >> ~/.ssh/authorized_keys2"
   done
 }
 
-if [ ! -f ~/.ssh/id_rsa.pub ]; then
+if [ ! -f $PUBKEY ]; then
   echo "Creating KeyPair on `hostname`.."
   ssh-keygen
 fi
-trust-key $@
+
+key-test
+no-pass "$@"
+

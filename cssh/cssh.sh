@@ -81,12 +81,12 @@ cssh() {
   for ((i=0; i<${#HOSTS[@]}; i++)); do
     if $ASYNC; then
       if [ -n "$CMD" -a -n "$SCRIPT" ]; then
-        ssh_cmd ${HOSTS[i]} $CMD && \
-        ssh_script  ${HOSTS[i]} $SCRIPT &
+        ssh_cmd ${HOSTS[i]} "$CMD" && \
+        ssh_script  ${HOSTS[i]} "$SCRIPT" &
       elif [ -n "$CMD" ]; then
-        ssh_cmd ${HOSTS[i]} $CMD &
+        ssh_cmd ${HOSTS[i]} "$CMD" &
       elif [ -n "$SCRIPT" ]; then
-        ssh_script ${HOSTS[i]} $SCRIPT &
+        ssh_script ${HOSTS[i]} "$SCRIPT" &
       fi
       # Save process id for blocking
       if $WAIT; then
@@ -94,10 +94,10 @@ cssh() {
       fi
     else
       if [ -n "$CMD" ]; then
-        ssh_cmd ${HOSTS[i]} $CMD
+        ssh_cmd ${HOSTS[i]} "$CMD"
       fi
       if [ -n "$SCRIPT" ]; then
-        ssh_script ${HOSTS[i]} $SCRIPT
+        ssh_script ${HOSTS[i]} "$SCRIPT"
       fi
     fi
   done
@@ -109,5 +109,5 @@ cssh() {
   fi
 }
 
-parse_args $@
+parse_args "$@"
 cssh

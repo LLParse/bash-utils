@@ -45,4 +45,4 @@ install() {
   fi
 }
 
-install $@
+install "$@"
