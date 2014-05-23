@@ -26,8 +26,12 @@ OPTIONS:
    -s      Execute script on hosts
 ```
 
+#Operation Systems Officially Supported
+MacOS X 10.8
+Ubuntu 12.04 LTS
+
 #Installation
-##Unix Machine
+##Local Machine
 ```bash
 REPO_DIR=/tmp/bash-utils
 
@@ -35,10 +39,10 @@ git clone https://github.com/Xerxes500/bash-utils.git $REPO_DIR
 sudo cp -f $REPO_DIR/cssh/cssh.sh /usr/bin/cssh
 rm -rf $REPO_DIR
 ```
-##Unix Cluster
+##Remote Machine / Cluster
 Change the HOSTS variable to match the hosts in your cluster.
 ```bash
-HOSTS=(host1.example.com host2.example.com host3.example.com)
+HOSTS=$(echo host{1..3}.example.com host42.example.com)
 REPO_DIR=/tmp/bash-utils
 
 git clone https://github.com/Xerxes500/bash-utils.git $REPO_DIR
