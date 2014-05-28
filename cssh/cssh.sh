@@ -25,7 +25,7 @@ error() {
 usage() {
 cat << EOF
 CSSH v0.1
-Usage: $0 [-a [-n]] [-o <options>] -s <script> hosts...
+Usage: $0 [-a [-n]] [-o <options>] -s <script> [-r <args>] hosts...
        $0 [-a [-n]] [-o <options>] -c <command> hosts...
        $0 -h
 
@@ -42,6 +42,7 @@ OPTIONS:
    -n      Non-blocking (return immediately)
    -o      SSH Options. Default: 
                  "-oStrictHostKeyChecking=no -oConnectTimeout=5"
+   -r      Arguments to execute script with
    -s      Execute script on hosts
 EOF
 exit 1
@@ -52,18 +53,20 @@ parse_args() {
   WAIT=true
   CMD=
   SCRIPT=
+  SCRIPT_ARGS=
   SSH_OPTS="-oStrictHostKeyChecking=no -oConnectTimeout=5"
   if [ $# -eq 0 ]; then
     usage
   fi
-  while getopts "ac:hno:s:" OPTION; do
+  while getopts "ac:hno:r:s:" OPTION; do
     case $OPTION in
       a) ASYNC=true;;
       c) CMD=$OPTARG;;
       h) usage;;
       n) WAIT=false;;
       o) SSH_OPTS=$OPTARG && echo "Using SSH Opts: $OPTARG";;
-      s) SCRIPT=$OPTARG;;
+      r) SCRIPT_ARGS="$OPTARG";;
+      s) SCRIPT="$OPTARG";;
       ?) echo "Invalid option: -$OPTARG" && usage;;
     esac
   done
@@ -72,34 +75,41 @@ parse_args() {
 }
 
 ssh_cmd() {
-  ssh ${SSH_OPTS} $1 $2
+  CMD=$(special_vars "$2")
+  ssh ${SSH_OPTS} $1 $CMD
 }
 
 ssh_script() {
-  ssh ${SSH_OPTS} $1 'bash -s' -- < $2
+  SCRIPT=$(special_vars "$2")
+  SCRIPT_ARGS=$(special_vars "$3")
+  ssh ${SSH_OPTS} $1 'bash -s' -- < "$SCRIPT" $SCRIPT_ARGS
+}
+
+special_vars() {
+  echo "$(sed -e "s/{{iteration}}/$ITER/g" <<< "$1")"
 }
 
 cssh() {
-  for ((i=0; i<${#HOSTS[@]}; i++)); do
+  for ((ITER=0; ITER<${#HOSTS[@]}; ITER++)); do
     if $ASYNC; then
       if [ -n "$CMD" -a -n "$SCRIPT" ]; then
-        ssh_cmd ${HOSTS[i]} "$CMD" && \
-        ssh_script  ${HOSTS[i]} "$SCRIPT" &
+        ssh_cmd ${HOSTS[ITER]} "$CMD" && \
+        ssh_script  ${HOSTS[ITER]} "$SCRIPT" "$SCRIPT_ARGS" &
       elif [ -n "$CMD" ]; then
-        ssh_cmd ${HOSTS[i]} "$CMD" &
+        ssh_cmd ${HOSTS[ITER]} "$CMD" &
       elif [ -n "$SCRIPT" ]; then
-        ssh_script ${HOSTS[i]} "$SCRIPT" &
+        ssh_script ${HOSTS[ITER]} "$SCRIPT" "$SCRIPT_ARGS" &
       fi
       # Save process id for blocking
       if $WAIT; then
-        pid[i]=$!
+        pid[ITER]=$!
       fi
     else
       if [ -n "$CMD" ]; then
-        ssh_cmd ${HOSTS[i]} "$CMD"
+        ssh_cmd ${HOSTS[ITER]} "$CMD"
       fi
       if [ -n "$SCRIPT" ]; then
-        ssh_script ${HOSTS[i]} "$SCRIPT"
+        ssh_script ${HOSTS[ITER]} "$SCRIPT" "$SCRIPT_ARGS"
       fi
     fi
   done
